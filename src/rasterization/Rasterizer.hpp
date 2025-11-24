@@ -30,10 +30,27 @@
 namespace SoftRenderer {
     class Rasterizer {
     public:
-        Rasterizer();
+        Rasterizer(int w, int h);
         ~Rasterizer();
 
         void rasterize();
+        
+        /**
+         * 计算给定点 P(x, y) 的重心坐标
+         * @param Px 待测试点的 X 坐标
+         * @param Py 待测试点的 Y 坐标
+         * @param v0 三角形的第一个顶点
+         * @param v1 三角形的第二个顶点
+         * @param v2 三角形的第三个顶点
+         * @param w0 用于返回的第一个重心坐标（输出参数）
+         * @param w1 用于返回的第二个重心坐标（输出参数）
+         * @param w2 用于返回的第三个重心坐标（输出参数）
+         * @return 三角形的面积的两倍 (用于后续归一化)，如果面积为 0 则返回 0
+         */
+        float computeBarycentric(float Px, float Py, const Vertex& v0,
+                                 const Vertex& v1, const Vertex& v2,
+                                 float& w0, float& w1, float& w2);
+        
         /**
          * 绘制三角形并进行纹理映射
          * @param fb 目标帧缓冲（包含尺寸），往哪里画
@@ -45,19 +62,7 @@ namespace SoftRenderer {
         void drawTriangle(FrameBuffer &fb, const Vertex &v0, const Vertex &v1, const Vertex &v2, const YUVTexture &texture);
 
     private:
-        // 创建两个三角形表示矩形面片
-        std::vector<Vertex> vertices = {
-            // 三角形1：左下、右下、左上
-            {0, 0, 0, 0},      // 左下，对应纹理左下坐标(0,0)
-            {width, 0, 1, 0},  // 右下，纹理坐标(1,0)
-            {0, height, 0, 1}, // 左上，纹理坐标(0,1)
-
-            // 三角形2：右下、右上、左上
-            {width, 0, 1, 0},      // 右下
-            {width, height, 1, 1}, // 右上
-            {0, height, 0, 1}      // 左上
-        };
-
+        // width 和 height 通常代表 FrameBuffer 或 Viewport 的像素数量，它们在定义上就是整数。
         int width;
         int height;
     };
