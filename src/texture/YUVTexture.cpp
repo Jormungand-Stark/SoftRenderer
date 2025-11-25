@@ -33,12 +33,13 @@ namespace SoftRenderer {
         ifs.read(reinterpret_cast<char *>(v_plane.data()), uv_size);
     }
 
-    void YUVTexture::sampleYUV(float u, float v, unsigned char &y, unsigned char &u_val, unsigned char &v_val) {
+    void YUVTexture::sampleYUV(float u, float v,
+                               unsigned char &y_val, unsigned char &u_val, unsigned char &v_val) const {
 
         // 1. 坐标转换，最邻近采样：四舍五入到最近的整数像素坐标
         // uv是归一化之后的值，所以可以通过uv与图像宽高相乘获得像素索引
-        int pix_x = static_cast<int>(u * width);
-        int pix_y = static_cast<int>(v * height);
+        int pix_x = static_cast<int>(u * width);  // 水平方向，0 到 width - 1
+        int pix_y = static_cast<int>(v * height); // 垂直方向，0 到 height - 1
 
         // 2. 边界钳位（CLAMP_TO_EDGE），纹理寻址模式/纹理环绕模式（Texture Wrap Mode）之一。
         /**
@@ -60,7 +61,7 @@ namespace SoftRenderer {
 
         // 3. Y 分量采样
         int y_index = pix_y * width + pix_x;
-        y = y_plane[y_index];
+        y_val = y_plane[y_index];
 
         // 4. U/V 分量采样 (4:2:0 降采样)
         int uv_x = pix_x / 2;

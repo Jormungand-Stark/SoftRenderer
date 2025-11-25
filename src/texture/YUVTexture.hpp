@@ -33,11 +33,14 @@ namespace SoftRenderer {
 
         /**
          * 根据纹理坐标获取YUV值，此时还不能显示
-         * @param u  纹理坐标：相对位置（浮点数，0到1）
-         * @param v 同 u
-         * @param 像素索引：访问具体像素的位置（整数，0到width-1）
+         * @param u 归一化水平纹理坐标u [0,1]，0=左边界，1=右边界
+         * @param v 归一化垂直纹理坐标v [0,1]，0=上边界，1=下边界  
+         * @param y_val 输出：亮度分量Y
+         * @param u_val 输出：色度分量U（为避免命名冲突）
+         * @param v_val 输出：色度分量V（为避免命名冲突）
          */
-        void sampleYUV(float u, float v, unsigned char &y, unsigned char &u_val, unsigned char &v_val);
+        void sampleYUV(float u, float v,
+                       unsigned char &y_val, unsigned char &u_val, unsigned char &v_val) const;
 
         int getWidth() const { return width; }
 

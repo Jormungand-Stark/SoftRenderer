@@ -8,15 +8,14 @@
 #ifndef Color_hpp
 #define Color_hpp
 
-#include <stdio.h>
+#include <cstdint>
 
 // 存储 RGB 三通道（每个通道 0-255）
 struct Color {
-    unsigned char r, g, b;
+    uint8_t r, g, b;
 
     Color() : r(0), g(0), b(0) {}
-    Color(unsigned char red, unsigned char green, unsigned char blue) : r(red), g(green), b(blue) {}
+    Color(uint8_t red, uint8_t green, uint8_t blue) : r(red), g(green), b(blue) {}
 };
-
 
 #endif /* Color_hpp */
