@@ -30,9 +30,7 @@
 namespace SoftRenderer {
     class Rasterizer {
     public:
-        // 构造函数：设置默认渲染目标尺寸（用于全屏四边形等）
-        Rasterizer(int defaultWidth, int defaultHeight)
-                : defaultWidth(defaultWidth), defaultHeight(defaultHeight) {}
+        Rasterizer() = default;
         
         /**
          * 绘制三角形并进行纹理映射
@@ -77,10 +75,6 @@ namespace SoftRenderer {
         float computeBarycentric(float px, float py,
                                  const Vertex& v0, const Vertex& v1, const Vertex& v2,
                                  float& w0, float& w1, float& w2);
-        
-        // defaultWidth 和 defaultHeight 通常代表 FrameBuffer 或 Viewport 的像素数量，它们在定义上就是整数。
-        int defaultWidth;
-        int defaultHeight;
     };
 
 } // namespace SoftRenderer
