@@ -1,2 +1,108 @@
-# Xcode user interface state
+# ============================================
+# SoftRenderer 项目 .gitignore
+# ============================================
+
+# ----- 构建系统文件 -----
+# CMake 生成的文件
+build/
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+*.cmake.*
+CTestTestfile.cmake
+Testing/
+compile_commands.json
+
+# ----- 编译输出 -----
+# 可执行文件和库
+bin/
+lib/
+SoftRenderer  # 直接编译的可执行文件
+*.so
+*.dylib
+*.a
+
+# 对象文件和调试信息
+*.o
+*.obj
+*.out
+*.s
+*.ii
+*.gcno
+*.gcda
+*.dSYM/
+*.pdb
+
+# ----- IDE和编辑器 -----
+# Xcode
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
 *.xcuserstate
+*.mode1v3
+*.pbxuser
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# CLion
+.idea/
+*.iml
+
+# Vim
+*.swp
+*.swo
+*~
+
+# ----- 系统文件 -----
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ----- 临时文件和日志 -----
+*.tmp
+*.temp
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# ----- Python缓存 -----
+# 你的generate_test_yuv.py可能会产生
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# ----- 生成的文件 -----
+# 可以重新生成的YUV测试文件（大文件）
+assets/yuv/*.yuv
+!assets/yuv/test_320x240.yuv
+!assets/yuv/test_640x480.yuv
+
+# ----- 其他 -----
+# 依赖目录（如果你以后添加第三方库）
+deps/
+third_party/
+external/
+
+# 包管理器文件
+conanfile.txt
+conan.lock
