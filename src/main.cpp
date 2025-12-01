@@ -32,7 +32,7 @@ int main() {
         SoftRenderer::YUVTexture texture(filename, 1920, 1080);
         
         // 3. 光栅化
-        SoftRenderer::Rasterizer rasterizer(fb.getWidth(), fb.getHeight());
+        SoftRenderer::Rasterizer rasterizer;
         
         // 4. 创建全屏四边形顶点
         std::vector<Vertex> quad = {

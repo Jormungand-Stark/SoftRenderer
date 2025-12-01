@@ -15,6 +15,14 @@ namespace SoftRenderer {
     /// V平面：1/4分辨率（width/2 × height/2）
     /// 文件大小计算：width × height × 1.5 bytes
     YUVTexture::YUVTexture(const std::string &filename, int w, int h) : width_(w), height_(h) {
+        if (width_ <= 0 || height_ <= 0) {
+            throw std::invalid_argument("纹理尺寸必须大于0");
+        }
+        
+        if (width_ % 2 != 0 || height_ % 2 != 0) {
+            throw std::invalid_argument("YUV420要求宽高为偶数");
+        }
+        
         int y_size = w * h;
         int uv_size = (w / 2) * (h / 2);
 
@@ -23,14 +31,31 @@ namespace SoftRenderer {
         v_plane.resize(uv_size);
 
         std::ifstream ifs(filename, std::ios::binary);
-        if (!ifs)
-        { // 等同于 if (file.fail() || file.bad())
+        if (!ifs) { // 等同于 if (file.fail() || file.bad())
             throw std::runtime_error("Failed to open YUV file: " + filename);
         }
+        
+        // check file size
+        ifs.seekg(0, std::ios::end);    // 移到末尾
+        size_t file_size = ifs.tellg(); // 计算size
+        ifs.seekg(0, std::ios::beg);    // 完毕移至开头，便于后续读取操作。
+        
+        size_t expected_size = y_size + uv_size * 2;
+        if (file_size < expected_size) {
+            throw std::runtime_error("YUV文件大小不足: 期望 " +
+                                     std::to_string(expected_size) + " bytes, 实际 " +
+                                     std::to_string(file_size) + " bytes");
+        }
 
-        ifs.read(reinterpret_cast<char *>(y_plane.data()), y_size);
-        ifs.read(reinterpret_cast<char *>(u_plane.data()), uv_size);
-        ifs.read(reinterpret_cast<char *>(v_plane.data()), uv_size);
+        if (!ifs.read(reinterpret_cast<char*>(y_plane.data()), y_size)) {
+            throw std::runtime_error("读取Y分量失败");
+        }
+        if (!ifs.read(reinterpret_cast<char *>(u_plane.data()), uv_size)) {
+            throw std::runtime_error("读取U分量失败");
+        }
+        if (!ifs.read(reinterpret_cast<char *>(v_plane.data()), uv_size)) {
+            throw std::runtime_error("读取V分量失败");
+        }
     }
 
     void YUVTexture::sampleYUV(float u, float v,
