@@ -1,24 +1,47 @@
 cmake_minimum_required(VERSION 3.10)
-project(SoftRenderer)
+project(SoftRenderer VERSION 1.0.0)
 
-set(CMAKE_CXX_STANDARD 11)
+# 设置C++标准
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
 
-# 源代码文件
-set(SRC_FILES
-    src/main.cpp
-    src/core/Color.cpp
-    src/core/FrameBuffer.cpp
-    src/texture/YUVTexture.cpp
-    src/texture/ColorSpace.cpp
-    src/rasterization/Rasterizer.cpp
-)
+# 对于AppleClang/MacOS的一些优化设置
+if(APPLE)
+    set(CMAKE_MACOSX_RPATH ON)
+    # 启用更多警告
+    add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
-# 包含目录
+# 包含目录，即头文件位置
 include_directories(
+    src
     src/core
-    src/geometry
+    src/geometry  
     src/texture
     src/rasterization
 )
 
-add_executable(SoftRenderer ${SRC_FILES})
+# 编译这些.cpp文件
+add_executable(SoftRenderer
+    src/main.cpp
+    
+    # core
+    src/core/FrameBuffer.cpp
+    
+    # geometry
+    src/geometry/Vertex.cpp
+    
+    # texture
+    src/texture/ColorSpace.cpp
+    src/texture/YUVTexture.cpp
+    
+    # rasterization
+    src/rasterization/Interpolator.cpp
+    src/rasterization/Rasterizer.cpp
+)
+
+# 设置输出目录到 build/bin
+set_target_properties(SoftRenderer PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)

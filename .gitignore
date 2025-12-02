@@ -5,6 +5,8 @@
 # ----- 构建系统文件 -----
 # CMake 生成的文件
 build/
+out/
+dist/
 CMakeCache.txt
 CMakeFiles/
 cmake_install.cmake
@@ -14,6 +16,8 @@ Makefile
 CTestTestfile.cmake
 Testing/
 compile_commands.json
+CMakeScripts/
+*.make 
 
 # ----- 编译输出 -----
 # 可执行文件和库
@@ -36,13 +40,10 @@ SoftRenderer  # 直接编译的可执行文件
 *.pdb
 
 # ----- IDE和编辑器 -----
-# Xcode
+# Xcode项目完全由用户生成
 *.xcodeproj/
 *.xcworkspace/
-xcuserdata/
 *.xcuserstate
-*.mode1v3
-*.pbxuser
 
 # VS Code
 .vscode/
@@ -94,8 +95,12 @@ venv.bak/
 # ----- 生成的文件 -----
 # 可以重新生成的YUV测试文件（大文件）
 assets/yuv/*.yuv
+# 特别保留两个小尺寸的示例文件，供仓库使用者快速测试
 !assets/yuv/test_320x240.yuv
 !assets/yuv/test_640x480.yuv
+
+# 软渲染器运行时生成的渲染结果图片
+samples/*.ppm
 
 # ----- 其他 -----
 # 依赖目录（如果你以后添加第三方库）

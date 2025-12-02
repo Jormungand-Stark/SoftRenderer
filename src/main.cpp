@@ -2,7 +2,7 @@
 //  main.cpp
 //  softrender
 //
-//  Created by 封睿文 on 2025/11/19.
+//  Created by Jormungand on 2025/11/19.
 //
 
 #include <core/FrameBuffer.hpp>
@@ -10,7 +10,7 @@
 #include <rasterization/Rasterizer.hpp>
 #include <iostream>
 
-int main() {
+int main(int argc, char* argv[]) {
     /**
      YUVTexture (YUV数据)
           ↓
@@ -27,9 +27,32 @@ int main() {
         SoftRenderer::FrameBuffer fb(800, 600);
         fb.clear();
         
-        // 2. 加载YUV纹理
-        std::string filename = "/Users/jormungand/Downloads/output.yuv";
-        SoftRenderer::YUVTexture texture(filename, 1920, 1080);
+        // 2. 加载YUV纹理（智能默认路径）
+        std::string input_file;
+        
+        // 获取当前工作目录
+        std::string current_dir = std::filesystem::current_path().string();
+        if (argc > 1) {
+            input_file = argv[1]; // 从命令行获取
+        }
+        else {
+            // 智能选择默认路径
+            if (current_dir.find("build") != std::string::npos) {
+                // 在build目录运行 → 向上找assets
+                input_file = "../assets/yuv/test_640x480.yuv";
+            } else {
+                // 在项目根目录或其他目录运行 → 直接找assets
+                input_file = "assets/yuv/test_640x480.yuv";
+            }
+        }
+
+        if (!std::filesystem::exists(input_file)) {
+            std::cerr << "错误: 找不到输入文件 " << input_file << std::endl;
+            std::cerr << "请运行: python assets/scripts/generate_test_yuv.py 640 480 " << input_file << std::endl;
+            return 1;
+        }
+
+        SoftRenderer::YUVTexture texture(input_file, 640, 480);   
         
         // 3. 光栅化
         SoftRenderer::Rasterizer rasterizer;
@@ -51,16 +74,36 @@ int main() {
         rasterizer.drawTexturedTriangle(fb, quad[0], quad[1], quad[2], texture);
         rasterizer.drawTexturedTriangle(fb, quad[3], quad[4], quad[5], texture);
         
-        // 绘制纯色三角形
+        // 绘制纯色三角形，debug code
 //        rasterizer.drawSolidTriangle(fb, quad[0], quad[1], quad[2], {255, 0, 0});
 //        rasterizer.drawSolidTriangle(fb, quad[3], quad[4], quad[5], {0, 255, 0});
         
-        // 6. 保存结果
-        fb.saveToPPM("/Users/jormungand/Downloads/output.ppm");
-        std::cout << "渲染完成！保存为 output.ppm" << std::endl;
+        // 6. 保存结果（智能输出路径）
+        std::string output_dir = "samples";
+        // 如果当前目录包含"build"，说明在build目录运行，需要向上找samples目录
+        if (current_dir.find("build") != std::string::npos) {
+            output_dir = "../samples";
+        }
+
+        // 确保输出目录存在
+        std::filesystem::create_directories(output_dir);
+
+        std::string output_file = output_dir + "/render_" +
+                                 std::to_string(fb.getWidth()) + "x" +
+                                 std::to_string(fb.getHeight()) + ".ppm";
+        
+        if (fb.saveToPPM(output_file)) {
+            std::cout << "✅ 渲染成功!" << std::endl;
+            std::cout << "   输入: " << input_file << std::endl;
+            std::cout << "   输出: " << output_file << std::endl;
+            std::cout << "   尺寸: " << fb.getWidth() << "x" << fb.getHeight() << std::endl;
+        } else {
+            std::cerr << "❌ 保存失败: " << output_file << std::endl;
+            return 1;
+        }
     } catch (const std::exception& e) {
         std::cerr << "错误: " << e.what() << std::endl;
+        return 1;
     }
-    std::cout << "Soft Renderer Started!" << std::endl;
     return 0;
 }
