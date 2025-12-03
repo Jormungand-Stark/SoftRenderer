@@ -5,12 +5,56 @@
 //  Created by Jormungand on 2025/11/19.
 //
 
+#ifdef _WIN32
+    #include <windows.h>
+#elif defined(__APPLE__)
+    #include <mach-o/dyld.h>
+#elif defined(__linux__)
+    #include <unistd.h>
+#endif
+
 #include <iostream>
 #include <filesystem>
 
 #include <core/FrameBuffer.hpp>
 #include <texture/YUVTexture.hpp>
 #include <rasterization/Rasterizer.hpp>
+
+// 获取项目根目录
+std::string getProjectRoot() {
+    namespace fs = std::filesystem;
+    
+    // 1. 编译时定义（最可靠）
+    #ifdef PROJECT_ROOT_PATH
+    return PROJECT_ROOT_PATH;
+    #endif
+    
+    // 2. 环境变量
+    if (const char* env_root = std::getenv("SOFTRENDERER_ROOT")) {
+        return env_root;
+    }
+    
+    // 3. 可执行文件位置推导（macOS特化）
+    #ifdef __APPLE__
+    char path[1024];
+    uint32_t size = sizeof(path);
+    if (_NSGetExecutablePath(path, &size) == 0) {
+        fs::path exe_path = fs::canonical(path);
+        // 向上查找CMakeLists.txt
+        for (fs::path current = exe_path;
+             current != current.root_path();
+             current = current.parent_path()) {
+            if (fs::exists(current / "CMakeLists.txt")) {
+                return current.string();
+            }
+        }
+    }
+    #endif
+    
+    // 4. 默认：当前目录
+    return fs::current_path().string();
+}
+
 
 int main(int argc, char* argv[]) {
     /**
@@ -25,6 +69,24 @@ int main(int argc, char* argv[]) {
      保存为图片/显示
      */
     try {
+        // 获取和打印更多环境信息
+        std::cout << "=== Xcode环境调试 ===" << std::endl;
+        
+        std::string project_root = getProjectRoot();
+        
+        std::cout << "项目根目录: " << project_root << std::endl;
+        
+        if (chdir(project_root.c_str()) != 0) {
+            std::cerr << "警告: 无法切换到项目根目录" << std::endl;
+        } else {
+            std::cout << "已切换到: " << std::filesystem::current_path() << std::endl;
+        }
+        
+        // 现在可以正确访问assets
+        std::string yuv_path = "assets/yuv/test_640x480.yuv";
+        std::cout << "YUV文件: " << yuv_path << std::endl;
+        std::cout << "文件存在: " << std::filesystem::exists(yuv_path) << std::endl;
+        
         // 1. 创建帧缓冲作为输出目标
         SoftRenderer::FrameBuffer fb(800, 600);
         fb.clear();

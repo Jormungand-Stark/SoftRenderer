@@ -48,8 +48,11 @@ add_executable(SoftRenderer
 )
 
 # 为编译器预处理器添加宏定义，显式启用 filesystem 特性
-target_compile_definitions(SoftRenderer PRIVATE __cpp_lib_filesystem=201703L)
-# 保持原有的库链接
+target_compile_definitions(SoftRenderer PRIVATE
+    __cpp_lib_filesystem=201703L
+    PROJECT_ROOT_PATH="${CMAKE_SOURCE_DIR}"  # 关键：定义项目根目录宏
+)
+# 文件系统库链接
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_link_libraries(SoftRenderer PUBLIC stdc++fs)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -60,3 +63,23 @@ endif()
 set_target_properties(SoftRenderer PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
+
+# 仅当生成Xcode项目时，设置工作目录
+if(CMAKE_GENERATOR STREQUAL "Xcode")
+    # 计算项目根目录相对于构建目录的相对路径
+    file(RELATIVE_PATH PROJECT_RELATIVE_PATH 
+         ${CMAKE_BINARY_DIR}  # 构建目录 (e.g., build/xcode-Debug)
+         ${CMAKE_SOURCE_DIR}  # 项目根目录
+    )
+    
+    # Debug配置：使用项目根目录，以便运行时能找到资源文件
+    set(CMAKE_XCODE_ATTRIBUTE_WORKING_DIRECTORY[config=Debug] 
+        "\$(SRCROOT)/${PROJECT_RELATIVE_PATH}"
+    )
+    
+    # Release配置：使用可执行文件目录（生产部署）
+    set(CMAKE_XCODE_ATTRIBUTE_WORKING_DIRECTORY[config=Release] 
+        "\$(BUILT_PRODUCTS_DIR)")
+    
+    message(STATUS "已配置Xcode Debug工作目录: \$(SRCROOT)/${PROJECT_RELATIVE_PATH}")
+endif()
