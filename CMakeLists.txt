@@ -19,15 +19,6 @@ if(APPLE)
     add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# 包含目录，即头文件位置
-include_directories(
-    src
-    src/core
-    src/geometry  
-    src/texture
-    src/rasterization
-)
-
 # 编译这些.cpp文件
 add_executable(SoftRenderer
     src/main.cpp
@@ -38,13 +29,24 @@ add_executable(SoftRenderer
     # geometry
     src/geometry/Vertex.cpp
     
-    # texture
-    src/texture/ColorSpace.cpp
-    src/texture/YUVTexture.cpp
-    
     # rasterization
     src/rasterization/Interpolator.cpp
     src/rasterization/Rasterizer.cpp
+
+    # shaders
+    src/shaders/VertexShader.cpp
+    src/shaders/PassThroughVertexShader.cpp
+    src/shaders/Transform2DShader.cpp
+
+    # texture
+    src/texture/ColorSpace.cpp
+    src/texture/YUVTexture.cpp
+)
+
+# 包含目录，即头文件位置
+target_include_directories(SoftRenderer PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/glm
 )
 
 # 为编译器预处理器添加宏定义，显式启用 filesystem 特性

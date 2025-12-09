@@ -101,6 +101,11 @@ assets/yuv/*.yuv
 
 # 软渲染器运行时生成的渲染结果图片
 samples/*.ppm
+samples/*.png
+samples/*.jpeg
+
+# 临时生成的参考图
+reference_output.png
 
 # ----- 其他 -----
 # 依赖目录（如果你以后添加第三方库）

@@ -21,8 +21,12 @@
 #include <iostream>
 #include <filesystem>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 #include <core/FrameBuffer.hpp>
 #include <texture/YUVTexture.hpp>
+#include <shaders/Transform2DShader.hpp>
 #include <rasterization/Rasterizer.hpp>
 
 // 获取项目根目录
@@ -96,7 +100,7 @@ int main(int argc, char* argv[]) {
         SoftRenderer::FrameBuffer fb(800, 600);
         fb.clear();
         
-        // 2. 加载YUV纹理（智能默认路径）
+        // 2. 加载YUV纹理
         std::string input_file;
         
         // 获取当前工作目录
@@ -123,31 +127,50 @@ int main(int argc, char* argv[]) {
 
         SoftRenderer::YUVTexture texture(input_file, 640, 480);   
         
-        // 3. 光栅化
-        SoftRenderer::Rasterizer rasterizer;
-        
-        // 4. 创建全屏四边形顶点
-        std::vector<Vertex> quad = {
+        // 3. 创建和配置顶点着色器
+        auto vertex_shader = std::make_unique<SoftRenderer::Transform2DShader>();
+        SoftRenderer::Transform2DUniforms uniforms;
+        uniforms.translateX = 100.0f; // 向右平移100像素
+        // uniforms.translateY = 0.0f;
+        uniforms.scaleX = 2.0f; // 宽度放大2倍（非均匀缩放）
+        uniforms.scaleY = 1.0f; // 高度保持不变
+        uniforms.rotate_angle = glm::radians(45.0f); // 旋转45度
+
+        vertex_shader->setUniforms(uniforms);
+
+        // 4. 定义原始顶点数据
+        std::vector<Vertex> original_vertices = {
             // 屏幕坐标   // 纹理坐标
             // 左下三角形
-            {0.0f, 0.0f, 0.0f, 0.0f},
-            {800.0f, 0.0f, 1.0f, 0.0f},
-            {0.0f, 600.0f, 0.0f, 1.0f},
+            {0.0f, 0.0f, 0.0f, 0.0f},     // 左下
+            {800.0f, 0.0f, 1.0f, 0.0f},   // 右下
+            {0.0f, 600.0f, 0.0f, 1.0f},   // 左上
             // 右上三角形
-            {0.0f, 600.0f, 0.0f, 1.0f},
-            {800.0f, 600.0f, 1.0f, 1.0f},
-            {800.0f, 0.0f, 1.0f, 0.0f}
+            {0.0f, 600.0f, 0.0f, 1.0f},   // 左上
+            {800.0f, 600.0f, 1.0f, 1.0f}, // 右上
+            {800.0f, 0.0f, 1.0f, 0.0f}    // 右下
         };
+
+        // 5. 应用顶点着色器变换
+        std::vector<Vertex> transformed_vertices(original_vertices.size());
+        vertex_shader->processVertices(
+            transformed_vertices.data(), 
+            original_vertices.data(), 
+            original_vertices.size()
+        );
+
+        // 6. 创建光栅化器并渲染变换后的三角形
+        SoftRenderer::Rasterizer rasterizer;
         
-        // 5. 渲染两个三角形
-        rasterizer.drawTexturedTriangle(fb, quad[0], quad[1], quad[2], texture);
-        rasterizer.drawTexturedTriangle(fb, quad[3], quad[4], quad[5], texture);
+        // 使用变换后的顶点进行渲染！
+        rasterizer.drawTexturedTriangle(fb, transformed_vertices[0], transformed_vertices[1], transformed_vertices[2], texture);
+        rasterizer.drawTexturedTriangle(fb, transformed_vertices[3], transformed_vertices[4], transformed_vertices[5], texture);
         
         // 绘制纯色三角形，debug code
 //        rasterizer.drawSolidTriangle(fb, quad[0], quad[1], quad[2], {255, 0, 0});
 //        rasterizer.drawSolidTriangle(fb, quad[3], quad[4], quad[5], {0, 255, 0});
         
-        // 6. 保存结果（智能输出路径）
+        // 7. 保存结果（智能输出路径）
         std::string output_dir = "samples";
         // 如果当前目录包含"build"，说明在build目录运行，需要向上找samples目录
         if (current_dir.find("build") != std::string::npos) {
