@@ -46,7 +46,7 @@ add_executable(SoftRenderer
 # 包含目录，即头文件位置
 target_include_directories(SoftRenderer PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/glm
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/glm/glm
 )
 
 # 为编译器预处理器添加宏定义，显式启用 filesystem 特性

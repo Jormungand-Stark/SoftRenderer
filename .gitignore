@@ -108,9 +108,11 @@ samples/*.jpeg
 reference_output.png
 
 # ----- 其他 -----
-# 依赖目录（如果你以后添加第三方库）
+# 依赖目录
 deps/
-third_party/
+third_party/*      # 忽略 third_party 下的直接内容
+# 但是，不忽略明确要使用的第三方库子目录
+!third_party/glm/  # glm 例外
 external/
 
 # 包管理器文件
