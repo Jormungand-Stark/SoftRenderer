@@ -12,3 +12,7 @@ jobs:
         run: cmake -B build -S . -DCMAKE_BUILD_TYPE=Release
       - name: Build
         run: cmake --build build --config Release
+      - name: Cleanup (Optional)
+        # 无论构建成功失败都运行清理
+        if: always()
+        run: rm -rf build

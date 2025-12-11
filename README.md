@@ -73,6 +73,20 @@ python /path/to/SoftRenderer/assets/scripts/generate_test_yuv.py 640 480 /path/t
 - 建议使用偶数宽高，脚本会对奇数值进行+1调整（YUV420格式要求）。
 - 运行后会打印生成文件的详细信息和使用示例。
 
+## 依赖管理
+
+本项目将第三方库作为源码直接嵌入（Vendor），以保证构建的可重现性。
+
+### 核心依赖
+- **[GLM](https://github.com/g-truc/glm)** (OpenGL Mathematics)：用于图形数学运算的头文件库。
+  - **版本**：1.0.2
+  - **位置**：`third_party/glm/`
+  - **管理方式**：直接嵌入头文件（非 Git 子模块）。
+
+### 注意事项
+- 所有依赖均位于 `third_party/` 目录，构建系统（CMake）已配置好包含路径。
+- 若需升级 GLM，请下载其官方发布包（Release），替换 `third_party/glm/` 目录内容，并更新此文档中的版本号。
+
 ## 项目结构
 ```text
 SoftRenderer/
@@ -116,3 +130,18 @@ SoftRenderer/
 
 ## 许可证
 MIT License - 查看 [LICENSE](LICENSE) 文件了解详情
+
+## CI/CD 构建说明
+
+### 已知问题与解决
+
+**问题**：GitHub Actions CI 构建失败，报错 `fatal error: glm/glm.hpp: No such file or directory`。
+
+**原因**：`third_party/glm` 目录曾被错误地识别为 Git 子模块，导致 CI 服务器无法获取其源码。
+
+**解决方案**：
+1.  确保 `glm` 作为纯头文件库嵌入在 `third_party/` 目录中，**不是**子模块。
+2.  确保 CMake 包含路径于项目 `CMakeLists.txt` 中已正确设置 ：
+    ```cmake
+    target_include_directories(SoftRenderer PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/third_party/glm)
+    ```
