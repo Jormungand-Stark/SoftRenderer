@@ -64,6 +64,152 @@ std::string getProjectRoot() {
     return fs::current_path().string();
 }
 
+#if 1
+
+// 创建4x4棋盘格YUV文件（I420格式）
+void createTestChessYUV(const std::string& filename, int width = 4, int height = 4) {
+    std::ofstream file(filename, std::ios::binary);
+    
+    // Y平面（亮度） - 棋盘格
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            unsigned char y_val = ((x + y) % 2 == 0) ? 0 : 255; // 棋盘格
+            file.write(reinterpret_cast<char*>(&y_val), 1);
+        }
+    }
+    
+    // U平面（中性灰）
+    for (int y = 0; y < height/2; y++) {
+        for (int x = 0; x < width/2; x++) {
+            unsigned char u_val = 128;
+            file.write(reinterpret_cast<char*>(&u_val), 1);
+        }
+    }
+    
+    // V平面（中性灰）
+    for (int y = 0; y < height/2; y++) {
+        for (int x = 0; x < width/2; x++) {
+            unsigned char v_val = 128;
+            file.write(reinterpret_cast<char*>(&v_val), 1);
+        }
+    }
+    
+    file.close();
+    std::cout << "创建测试纹理: " << filename 
+              << " (" << width << "x" << height << ")" << std::endl;
+}
+
+std::vector<Vertex> createFullscreenQuad(float screenWidth, float screenHeight) {
+    return {
+        // 三角形1：左下、右下、左上
+        {0.0f, 0.0f, 0.0f, 0.0f},           // 左下，纹理坐标(0,0)
+        {screenWidth, 0.0f, 1.0f, 0.0f},    // 右下，纹理坐标(1,0)  
+        {0.0f, screenHeight, 0.0f, 1.0f},   // 左上，纹理坐标(0,1)
+        
+        // 三角形2：右下、右上、左上
+        {screenWidth, 0.0f, 1.0f, 0.0f},    // 右下
+        {screenWidth, screenHeight, 1.0f, 1.0f}, // 右上
+        {0.0f, screenHeight, 0.0f, 1.0f}    // 左上
+    };
+}
+
+int runFilterTest() {
+    std::cout << "=== 运行过滤对比测试 ===" << std::endl;
+    
+    // 获取当前目录
+    std::string current_dir = std::filesystem::current_path().string();
+    std::string test_dir = "samples/test";
+    
+    // 如果在build目录，调整路径
+    if (current_dir.find("build") != std::string::npos) {
+        test_dir = "../samples/test";
+    }
+    
+    // 创建测试目录
+    std::filesystem::create_directories(test_dir);
+    
+    // 创建测试纹理（4x4棋盘格）
+    std::string texture_path = test_dir + "/test_chess_4x4.yuv";
+    createTestChessYUV(texture_path, 4, 4);
+    
+    // 纹理尺寸和屏幕尺寸
+    int textureWidth = 4;
+    int textureHeight = 4;
+    int screenWidth = 800;
+    int screenHeight = 600;
+    
+    // 创建纹理对象
+    SoftRenderer::YUVTexture texture(texture_path, textureWidth, textureHeight);
+    
+    // 创建光栅化器
+    SoftRenderer::Rasterizer rasterizer;
+    
+    // ========== 测试1：最邻近过滤 ==========
+    {
+        std::cout << "\n测试1: 最邻近过滤 (Nearest)" << std::endl;
+        
+        SoftRenderer::FrameBuffer fb(screenWidth, screenHeight);
+        fb.clear({128, 128, 128}); // 灰色背景
+        
+        texture.setFilterMode(SoftRenderer::TextureFilter::NEAREST);  // 注意：你的枚举可能是NEAREST
+        
+        auto quad = createFullscreenQuad(fb.getWidth(), fb.getHeight());
+        
+        // 绘制两个三角形
+        rasterizer.drawTexturedTriangle(fb, quad[0], quad[1], quad[2], texture);
+        rasterizer.drawTexturedTriangle(fb, quad[3], quad[4], quad[5], texture);
+        
+        std::string output_path = test_dir + "/nearest_4x4_to_800x600.ppm";
+        fb.saveToPPM(output_path);
+        std::cout << "已保存: " << output_path << std::endl;
+    }
+    
+    // ========== 测试2：双线性过滤 ==========
+    {
+        std::cout << "\n测试2: 双线性过滤 (Bilinear)" << std::endl;
+        
+        SoftRenderer::FrameBuffer fb(screenWidth, screenHeight);
+        fb.clear({128, 128, 128}); // 灰色背景
+        
+        texture.setFilterMode(SoftRenderer::TextureFilter::BILINEAR);
+        
+        auto quad = createFullscreenQuad(fb.getWidth(), fb.getHeight());
+        
+        // 绘制两个三角形
+        rasterizer.drawTexturedTriangle(fb, quad[0], quad[1], quad[2], texture);
+        rasterizer.drawTexturedTriangle(fb, quad[3], quad[4], quad[5], texture);
+        
+        std::string output_path = test_dir + "/bilinear_4x4_to_800x600.ppm";
+        fb.saveToPPM(output_path);
+        std::cout << "已保存: " << output_path << std::endl;
+    }
+    
+    // ========== 调试信息 ==========
+    std::cout << "\n=== 测试信息 ===" << std::endl;
+    std::cout << "纹理尺寸: " << textureWidth << "x" << textureHeight << std::endl;
+    std::cout << "屏幕尺寸: " << screenWidth << "x" << screenHeight << std::endl;
+    std::cout << "放大倍数: " << (screenWidth/textureWidth) << "倍" << std::endl;
+    std::cout << "\n✅ 测试完成！" << std::endl;
+    std::cout << "用图片查看器打开以下文件并放大观察：" << std::endl;
+    std::cout << "1. " << test_dir << "/nearest_4x4_to_800x600.ppm" << std::endl;
+    std::cout << "2. " << test_dir << "/bilinear_4x4_to_800x600.ppm" << std::endl;
+    std::cout << "\n提示：按 Ctrl+滚轮 或 Cmd+加号 放大图片" << std::endl;
+    
+    return 0;
+}
+
+int main() {
+    try {
+        runFilterTest();
+        std::cout << "\n✅ 测试完成！" << std::endl;
+    } catch (const std::exception& e) {
+        std::cerr << "❌ 测试失败: " << e.what() << std::endl;
+        return -1;
+    }
+    return 0;
+}
+
+#else  // 正常的渲染程序
 
 int main(int argc, char* argv[]) {
     /**
@@ -125,7 +271,8 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-        SoftRenderer::YUVTexture texture(input_file, 640, 480);   
+        SoftRenderer::YUVTexture texture(input_file, 640, 480);
+        texture.setFilterMode(SoftRenderer::TextureFilter::BILINEAR); // 使用双线性过滤
         
         // 3. 创建和配置顶点着色器
         auto vertex_shader = std::make_unique<SoftRenderer::Transform2DShader>();
@@ -199,3 +346,5 @@ int main(int argc, char* argv[]) {
     }
     return 0;
 }
+
+#endif
