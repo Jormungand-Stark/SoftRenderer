@@ -6,6 +6,7 @@
 //
 
 #include "YUVTexture.hpp"
+#include <iostream>
 
 namespace SoftRenderer {
 
@@ -129,12 +130,12 @@ namespace SoftRenderer {
                                           int planeWidth, int planeHeight,
                                           float u, float v) const {
         // 1. 坐标转换，双线性采样：downcast到最近的四个像素坐标
-        // uv是归一化之后的值，所以可以通过uv与图像宽高相乘获得像素索引
-        // 将坐标转换到U平面（UV平面分辨率是Y平面的1/2）
+        // uv是归一化之后的值，所以可以通过uv与图像宽高相乘获得像素索引，将坐标转换到YUV平面（UV平面分辨率是Y平面的1/2）。
+        /// NOTE: 注意不同于三角形包围盒中的”屏幕像素坐标“，这里是”纹理像素坐标“。
         float tex_x = u * planeWidth;  // UV平面宽度 = width_/2，“tex” 强调纹理空间坐标
         float tex_y = v * planeHeight; // UV平面高度 = height_/2
 
-        // 2. 转换为基于像素中心的坐标系
+        // 2. 转换为基于像素中心的坐标系，将连续的“几何坐标”对齐回以“整数为中心”的插值系统。
         /**
          * 双线性过滤需要基于纹素中心计算权重，因此需要坐标转换：
          * 1. u ∈ [0,1] 是归一化纹理坐标；
@@ -170,6 +171,16 @@ namespace SoftRenderer {
         // 这是centerBasedX的小数部分，表示离左边像素中心有多远
         float s = center_based_x - static_cast<float>(x0); // 水平权重
         float t = center_based_y - static_cast<float>(y0); // 垂直权重
+        
+        // 使用平滑函数收缩模糊带
+        // 如果你想更“硬”（接近最近邻），可以多次迭代 smoothstep
+        auto sharpen = [](float x) {
+            return x * x * (3.0f - 2.0f * x); // 标准 smoothstep
+        };
+
+        s = sharpen(s);
+        t = sharpen(t);
+
         s = std::clamp(s, 0.0f, 1.0f);
         t = std::clamp(t, 0.0f, 1.0f);
 

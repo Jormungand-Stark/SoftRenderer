@@ -39,9 +39,7 @@ inline float edgeFunction(float ax, float ay, float bx, float by, float cx, floa
 }
 
 void Rasterizer::drawTexturedTriangle(FrameBuffer &fb, const Vertex &v0, const Vertex &v1, const Vertex &v2, const YUVTexture &texture) {
-    // 1. 预计算三角形的总面积和倒数
-    // TotalArea_2X = edgeFunction(v0, v1, v2)
-    // 这是整个三角形的有向面积的两倍 (即 Px = v2 时的结果)
+    // 1. 预计算三角形的总面积和倒数（两倍有向面积用于重心坐标归一化，倒数可以避免重复计算）
     const float total_area_2X = edgeFunction(v0.x, v0.y, v1.x, v1.y, v2.x, v2.y);
 
     // 如果三角形退化（面积为 0），直接跳过渲染
@@ -68,7 +66,8 @@ void Rasterizer::drawTexturedTriangle(FrameBuffer &fb, const Vertex &v0, const V
     // w2 对应 edgeFunction(v0, v1, P)，但根据 w2 = 1 - w0 - w1，可以省去。
 
     // 3. 计算三角形的包围盒
-    // 确定 x 轴的最小和最大边界，并钳制在 FrameBuffer 范围内 [0, width-1]。
+    // v0.x, v1.x, v2.x诚然代表三角形在无限精确的笛卡尔坐标系中的顶点位置，但强制类型转换会将他们从“几何世界”映射到
+    // “屏幕像素阵列”，量化成像素整数索引，确定 x 轴的最小和最大边界，并钳制在 FrameBuffer 范围内 [0, width-1]。
     int min_x = static_cast<int>(std::floor(std::min({v0.x, v1.x, v2.x})));
     int max_x = static_cast<int>(std::ceil(std::max({v0.x, v1.x, v2.x})));
     
@@ -83,13 +82,14 @@ void Rasterizer::drawTexturedTriangle(FrameBuffer &fb, const Vertex &v0, const V
     max_y = std::min(fb.getHeight() - 1, max_y);
     
     // 4. 遍历三角形包围盒内的每个像素 (x,y)，将像素索引转换为几何采样点（px，py），依赖于 v0、v1、v2 坐标。
-    for (int x = min_x; x <= max_x; ++x) {
-        for (int y = min_y; y <= max_y; ++y) {
+    // 在内存访问上，按行访问（y在外层）通常对 CPU 缓存（Cache）更友好。
+    for (int y = min_y; y <= max_y; ++y) {
+        for (int x = min_x; x <= max_x; ++x) {
             // 像素是 1x1 的方格区域，不是数学上的点。
             // 如果用 (x, y)，它同时是四个像素的角点，系统很难确定这个像素是否应该被覆盖。
             // 即像素 (x, y) 的覆盖区域是 [x, x+1] × [y, y+1]。
             // 为了避免这种歧义，图形学中通常采用像素中心 (x+0.5, y+0.5) 作为采样点。
-            // 能确保每个像素只被判断一次，并得到最准确的颜色覆盖。
+            // 能确保每个像素只被判断一次，并得到最准确的颜色覆盖。是从离散的“格子编号”进入连续的“几何空间”。
             float px = static_cast<float>(x) + 0.5f;
             float py = static_cast<float>(y) + 0.5f;
 
@@ -104,8 +104,8 @@ void Rasterizer::drawTexturedTriangle(FrameBuffer &fb, const Vertex &v0, const V
             float w2 = 1.0f - w0 - w1; // 利用重心坐标和为1的性质，省去第三次 edgeFunction 调用！
             
             // 几何判断，基于非负性判断像素（px，py）是否在三角形内。
-            // if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
-            if (w0 >= -1e-5f && w1 >= -1e-5f && w2 >= -1e-5f) { // 使用微小容差
+            // 使用微小容差，等价于 if (w0 >= 0 && w1 >= 0 && w2 >= 0) {
+            if (w0 >= -1e-5f && w1 >= -1e-5f && w2 >= -1e-5f) {
                 // 6. 属性插值，依赖重心坐标 (w0, w1, w2) 计算像素对应的纹理坐标 (u，v)
                 float u, v;
                 Interpolator::interpolateUV(w0, w1, w2, v0, v1, v2, u, v);

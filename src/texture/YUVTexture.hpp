@@ -61,9 +61,26 @@ namespace SoftRenderer {
      private:
           void sampleNearest(float u, float v,
                              unsigned char &y_val, unsigned char &u_val, unsigned char &v_val) const;
+          /**
+           * 在指定平面上进行双线性采样
+           * @param plane 纹理平面数据
+           * @param planeWidth 纹理平面宽度
+           * @param planeHeight 纹理平面高度
+           * @param u 归一化水平纹理坐标u [0,1]，0=左边界，1=右边界
+           * @param v 归一化垂直纹理坐标v [0,1]，0=上边界，1=下边界
+           * @return 插值后的采样值
+           */
           float samplePlaneBilinear(const std::vector<unsigned char> &plane,
                                     int planeWidth, int planeHeight,
                                     float u, float v) const;
+          /**
+           * 双线性插值采样YUV值
+           * @param u 归一化水平纹理坐标u [0,1]，0=左边界，1=右边界
+           * @param v 归一化垂直纹理坐标v [0,1]，0=上边界，1=下边界
+           * @param y_val 输出：亮度分量Y
+           * @param u_val 输出：色度分量U（为避免命名冲突）
+           * @param v_val 输出：色度分量V（为避免命名冲突）
+           */
           void sampleBilinear(float u, float v,
                               unsigned char &y_val, unsigned char &u_val, unsigned char &v_val) const;
           // 纹理过滤模式，使用成员变量一次设定每次采样受益。也更符合现代图形API的“状态机”模型设计思路。
