@@ -64,7 +64,7 @@ std::string getProjectRoot() {
     return fs::current_path().string();
 }
 
-#if 1
+#if 0
 
 // 创建4x4棋盘格YUV文件（I420格式）
 void createTestChessYUV(const std::string& filename, int width = 4, int height = 4) {
@@ -223,6 +223,9 @@ int main(int argc, char* argv[]) {
           ↓
      保存为图片/显示
      */
+#ifdef _WIN32
+    SetConsoleOutputCP(65001); // 设置控制台为 UTF-8 编码
+#endif
     try {
         // 获取和打印更多环境信息
         std::cout << "=== Xcode环境调试 ===" << std::endl;
@@ -344,6 +347,7 @@ int main(int argc, char* argv[]) {
         std::cerr << "错误: " << e.what() << std::endl;
         return 1;
     }
+    system("pause");
     return 0;
 }
 
